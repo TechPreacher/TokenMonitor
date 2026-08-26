@@ -64,13 +64,29 @@ Lint:
 swiftlint
 ```
 
+Release + notarize (credentials stored as Keychain profile `notarytool-profile`):
+
+```sh
+xcodebuild -project TokenMonitor.xcodeproj -scheme TokenMonitor -configuration Release clean build
+ditto -c -k --keepParent <built .app> /tmp/TokenMonitor.zip
+xcrun notarytool submit /tmp/TokenMonitor.zip --keychain-profile "notarytool-profile" --wait
+xcrun stapler staple <built .app>
+```
+
 ## Architecture
 
 - Menu-bar only (`LSUIElement`): `NSStatusItem` + custom non-activating `NSPanel` hosting SwiftUI (NOT `MenuBarExtra` — can't float/pin reliably). Pin = `panel.level = .floating`.
 - Data providers behind protocols (`UsageProviding`, `CostProviding`, `CredentialStore`), merged by `UsageAggregator`; sources fail independently and degrade to stale/unavailable badges, never crash.
 - Subscription usage: OAuth usage endpoint (undocumented — verified by spike; provider returns `.unavailable` if it breaks) + local `~/.claude/projects/**/*.jsonl` parsing (ccusage-style) as fallback/detail.
-- API spend: Anthropic Admin API cost report; admin key lives in Keychain, entered via Settings. Do not invent Anthropic endpoints; verify against current docs.
-- ViewModels (`@Observable`) own polling (`RefreshScheduler`: 30s local, 60s network, exponential backoff); views stay dumb. Theme tokens centralized in one `Theme` type.
+- API spend: Anthropic Admin API cost report (pagination hard-capped at 12 pages); admin key lives in Keychain under service `com.corti.TokenMonitor`, entered via Settings, which validates it live against the API before persisting. Do not invent Anthropic endpoints; verify against current docs.
+- ViewModels (`@Observable`) own polling (`RefreshPolicy`: 30s local, 60s network, exponential backoff); views stay dumb. Theme tokens centralized in one `Theme` type.
+- Status item: left-click toggles the panel; right-click shows a transient About/Quit menu (menu assigned only during the click so left-click keeps working).
+
+## Signing & distribution
+
+- Bundle ID `com.corti.TokenMonitor`, team `M9Y77E7ZX5`. Debug: automatic "Apple Development". Release: manual "Developer ID Application" + hardened runtime + `--timestamp` + `CODE_SIGN_INJECT_BASE_ENTITLEMENTS: false` (all required for notarization — removing any breaks it).
+- Test target must carry the same `DEVELOPMENT_TEAM` as the app or `xcodebuild test` fails at dlopen with a Team-ID mismatch.
+- `dist/` holds stapled release artifacts and is gitignored.
 
 ## Conventions
 
