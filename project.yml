@@ -11,12 +11,13 @@ targets:
   TokenMonitor:
     type: application
     platform: macOS
-    sources: [App/Sources]
+    sources: [App/Sources, App/Assets.xcassets]
     dependencies:
       - package: TokenMonitorKit
     settings:
       base:
         GENERATE_INFOPLIST_FILE: true
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_LSUIElement: true            # menu-bar only, no Dock icon
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
         PRODUCT_BUNDLE_IDENTIFIER: com.techpreacher.TokenMonitor
