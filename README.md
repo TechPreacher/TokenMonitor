@@ -94,4 +94,10 @@ Data sources (`UsageProviding`, `CostProviding`) fail independently; the aggrega
 
 ## Development
 
-For development guidance, see [CLAUDE.md](CLAUDE.md).
+For development guidance, see [CLAUDE.md](CLAUDE.md). Design spec and implementation plan live under `docs/superpowers/`.
+
+## License
+
+[MIT](LICENSE) © 2026 Sascha Corti
+
+Not affiliated with or endorsed by Anthropic. "Claude" is a trademark of Anthropic, PBC. This tool reads your own local Claude Code data and calls Anthropic APIs with your own credentials.
