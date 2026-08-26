@@ -1,0 +1,5 @@
+.DS_Store
+*.xcodeproj
+TokenMonitorKit/.build/
+DerivedData/
+.swiftpm/
