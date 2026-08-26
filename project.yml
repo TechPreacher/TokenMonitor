@@ -40,6 +40,8 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: true
+        DEVELOPMENT_TEAM: M9Y77E7ZX5               # must match app target or dlopen rejects bundle
+        CODE_SIGN_IDENTITY: "Apple Development"
     dependencies:
       - target: TokenMonitor
 schemes:
