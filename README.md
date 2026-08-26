@@ -12,7 +12,7 @@ TokenMonitor tracks:
 
 The panel floats above all windows and can be pinned to stay visible. Data auto-refreshes (local scan every 30 s, network every 60 s, exponential backoff on failures). Right-click the menu-bar icon for About / Quit.
 
-![screenshot](docs/screenshot.png) <!-- TODO -->
+![TokenMonitor panel](Design/Screenshots/token%20monitor%20screenshot.png)
 
 ## Requirements
 
