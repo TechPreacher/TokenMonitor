@@ -15,17 +15,47 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         if let button = statusItem.button {
             button.image = NSImage(systemSymbolName: "gauge.with.dots.needle.67percent",
                                    accessibilityDescription: "TokenMonitor")
-            button.action = #selector(togglePanel)
+            button.action = #selector(handleClick)
             button.target = self
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
         }
     }
 
-    @objc private func togglePanel() {
+    @objc private func handleClick() {
+        if NSApp.currentEvent?.type == .rightMouseUp {
+            showContextMenu()
+        } else {
+            togglePanel()
+        }
+    }
+
+    private func togglePanel() {
         if let panel, panel.isVisible {
             closePanel()
         } else {
             openPanel()
         }
+    }
+
+    private func showContextMenu() {
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "About TokenMonitor",
+                                action: #selector(showAbout), keyEquivalent: ""))
+        menu.addItem(.separator())
+        let quit = NSMenuItem(title: "Quit TokenMonitor",
+                              action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        quit.target = NSApp
+        menu.addItem(quit)
+        menu.items.first?.target = self
+        // Assign transiently so left-click keeps toggling the panel instead of opening the menu.
+        statusItem.menu = menu
+        statusItem.button?.performClick(nil)
+        statusItem.menu = nil
+    }
+
+    @objc private func showAbout() {
+        NSApp.activate()
+        NSApp.orderFrontStandardAboutPanel(nil)
     }
 
     private func openPanel() {
