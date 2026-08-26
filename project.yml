@@ -23,7 +23,14 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.techpreacher.TokenMonitor
         SWIFT_VERSION: "6.0"
         ENABLE_APP_SANDBOX: false                  # needs ~/.claude + other app's keychain item
-        CODE_SIGN_IDENTITY: "-"                    # ad-hoc signing, personal use
+        DEVELOPMENT_TEAM: M9Y77E7ZX5
+        ENABLE_HARDENED_RUNTIME: true              # required for notarization
+      configs:
+        Debug:
+          CODE_SIGN_IDENTITY: "Apple Development"
+        Release:
+          CODE_SIGN_STYLE: Manual
+          CODE_SIGN_IDENTITY: "Developer ID Application"  # notarizable distribution signing
   TokenMonitorAppTests:
     type: bundle.unit-test
     platform: macOS
