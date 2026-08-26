@@ -25,6 +25,11 @@ public struct AdminCostClient: CostProviding {
 
         var totalCents = 0.0
         var page: String? = nil
+        var pagesFetched = 0
+        // Hard cap: a misbehaving server that always reports has_more:true
+        // must not hang the refresh loop. 12 pages x limit 31 comfortably
+        // covers any calendar month.
+        let maxPages = 12
         repeat {
             var components = URLComponents(string: "https://api.anthropic.com/v1/organizations/cost_report")!
             var items = [
@@ -62,8 +67,9 @@ public struct AdminCostClient: CostProviding {
                     totalCents += Double(item.amount) ?? 0
                 }
             }
+            pagesFetched += 1
             page = report.hasMore ? report.nextPage : nil
-        } while page != nil
+        } while page != nil && pagesFetched < maxPages
 
         return CostSnapshot(monthToDateUSD: totalCents / 100.0, fetchedAt: now)
     }
