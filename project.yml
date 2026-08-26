@@ -1,0 +1,41 @@
+# project.yml
+name: TokenMonitor
+options:
+  bundleIdPrefix: com.techpreacher
+  deploymentTarget:
+    macOS: "15.0"
+packages:
+  TokenMonitorKit:
+    path: TokenMonitorKit
+targets:
+  TokenMonitor:
+    type: application
+    platform: macOS
+    sources: [App/Sources]
+    dependencies:
+      - package: TokenMonitorKit
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        INFOPLIST_KEY_LSUIElement: true            # menu-bar only, no Dock icon
+        INFOPLIST_KEY_NSHumanReadableCopyright: ""
+        PRODUCT_BUNDLE_IDENTIFIER: com.techpreacher.TokenMonitor
+        SWIFT_VERSION: "6.0"
+        ENABLE_APP_SANDBOX: false                  # needs ~/.claude + other app's keychain item
+        CODE_SIGN_IDENTITY: "-"                    # ad-hoc signing, personal use
+  TokenMonitorAppTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [App/Tests]
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+    dependencies:
+      - target: TokenMonitor
+schemes:
+  TokenMonitor:
+    build:
+      targets:
+        TokenMonitor: all
+    test:
+      targets: [TokenMonitorAppTests]
