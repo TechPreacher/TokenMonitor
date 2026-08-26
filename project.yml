@@ -1,7 +1,7 @@
 # project.yml
 name: TokenMonitor
 options:
-  bundleIdPrefix: com.techpreacher
+  bundleIdPrefix: com.corti
   deploymentTarget:
     macOS: "15.0"
 packages:
@@ -20,7 +20,7 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         INFOPLIST_KEY_LSUIElement: true            # menu-bar only, no Dock icon
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
-        PRODUCT_BUNDLE_IDENTIFIER: com.techpreacher.TokenMonitor
+        PRODUCT_BUNDLE_IDENTIFIER: com.corti.TokenMonitor
         SWIFT_VERSION: "6.0"
         ENABLE_APP_SANDBOX: false                  # needs ~/.claude + other app's keychain item
         DEVELOPMENT_TEAM: M9Y77E7ZX5

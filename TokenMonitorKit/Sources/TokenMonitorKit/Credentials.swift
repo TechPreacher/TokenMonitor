@@ -43,7 +43,7 @@ public struct KeychainCredentialStore: CredentialStore {
         return try ClaudeCredentialsFile.accessToken(fromJSON: data)
     }
 
-    private static let adminService = "com.techpreacher.TokenMonitor"
+    private static let adminService = "com.corti.TokenMonitor"
     private static let adminAccount = "admin-api-key"
 
     public func readAdminAPIKey() -> String? {
