@@ -2,10 +2,12 @@
 import AppKit
 import SwiftUI
 
+@MainActor
 final class StatusItemController: NSObject, NSWindowDelegate {
     private let statusItem: NSStatusItem
     private var panel: FloatingPanel?
     private var clickMonitor: Any?
+    private let viewModel = DashboardViewModel.live()
 
     override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -40,8 +42,11 @@ final class StatusItemController: NSObject, NSWindowDelegate {
     }
 
     private func makePanel() -> FloatingPanel {
-        // Placeholder content; Task 9 swaps in DashboardView.
-        FloatingPanel(content: Text("TokenMonitor").padding(40))
+        let panel = FloatingPanel(content: DashboardView(viewModel: viewModel) { [weak self] pinned in
+            self?.panel?.isPinned = pinned
+        })
+        viewModel.startPolling()
+        return panel
     }
 
     private func positionUnderStatusItem(_ panel: NSPanel) {
