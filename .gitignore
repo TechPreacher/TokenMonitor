@@ -3,3 +3,4 @@
 TokenMonitorKit/.build/
 DerivedData/
 .swiftpm/
+dist/
