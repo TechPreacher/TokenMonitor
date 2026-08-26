@@ -125,7 +125,14 @@ struct DashboardView: View {
     }
 
     private func unavailableText(_ status: SourceStatus) -> some View {
-        Text("no data").font(Theme.label).foregroundStyle(Theme.dimText)
+        Group {
+            if case .unavailable(let reason) = status {
+                Text("no data").font(Theme.label).foregroundStyle(Theme.dimText)
+                    .help(reason)
+            } else {
+                Text("no data").font(Theme.label).foregroundStyle(Theme.dimText)
+            }
+        }
     }
 
     private func relative(_ date: Date) -> String {

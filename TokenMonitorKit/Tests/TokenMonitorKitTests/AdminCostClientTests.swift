@@ -34,6 +34,15 @@ struct MockAdminCredentials: CredentialStore {
         }
     }
 
+    @Test func unparseableAmountThrowsDecoding() async {
+        let body = #"{"data":[{"starting_at":"2026-08-01T00:00:00Z","ending_at":"2026-08-02T00:00:00Z","results":[{"amount":"not-a-number","currency":"USD"}]}],"has_more":false,"next_page":null}"#
+        StubURLProtocol.responses["/v1/organizations/cost_report"] = (200, Data(body.utf8))
+        let client = AdminCostClient(credentials: MockAdminCredentials(), session: stubbedSession())
+        await #expect(throws: FetchError.decoding) {
+            _ = try await client.fetchMonthToDateCost(now: Date())
+        }
+    }
+
     @Test func http403Throws() async {
         StubURLProtocol.responses["/v1/organizations/cost_report"] = (403, Data())
         let client = AdminCostClient(credentials: MockAdminCredentials(), session: stubbedSession())

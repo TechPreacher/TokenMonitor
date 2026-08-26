@@ -64,7 +64,10 @@ public struct AdminCostClient: CostProviding {
             }
             for bucket in report.data {
                 for item in bucket.results {
-                    totalCents += Double(item.amount) ?? 0
+                    guard let amount = Double(item.amount) else {
+                        throw FetchError.decoding
+                    }
+                    totalCents += amount
                 }
             }
             pagesFetched += 1
