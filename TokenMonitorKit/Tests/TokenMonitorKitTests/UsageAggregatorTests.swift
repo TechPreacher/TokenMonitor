@@ -10,26 +10,26 @@ import Foundation
     }
 
     @Test func successReplacesValueAndFreshens() {
-        let t = Date()
+        let now = Date()
         let state = UsageAggregator.merge(previous: .empty,
-                                          usage: .success(sampleUsage(at: t)),
+                                          usage: .success(sampleUsage(at: now)),
                                           transcripts: nil, cost: nil)
         #expect(state.usage?.sessionPercent == 10)
-        #expect(state.usageStatus == .fresh(fetchedAt: t))
+        #expect(state.usageStatus == .fresh(fetchedAt: now))
         // untouched sources unchanged
         #expect(state.costStatus == .unavailable(reason: "not loaded"))
     }
 
     @Test func failureKeepsPreviousValue() {
-        let t = Date(timeIntervalSinceNow: -120)
+        let past = Date(timeIntervalSinceNow: -120)
         var previous = DashboardState.empty
-        previous.usage = sampleUsage(at: t)
-        previous.usageStatus = .fresh(fetchedAt: t)
+        previous.usage = sampleUsage(at: past)
+        previous.usageStatus = .fresh(fetchedAt: past)
         let state = UsageAggregator.merge(previous: previous,
                                           usage: .failure(FetchError.httpStatus(500)),
                                           transcripts: nil, cost: nil)
         #expect(state.usage?.sessionPercent == 10)          // value retained
-        #expect(state.usageStatus == .fresh(fetchedAt: t))  // stale-by-age, not wiped
+        #expect(state.usageStatus == .fresh(fetchedAt: past))  // stale-by-age, not wiped
     }
 
     @Test func failureWithNoPreviousBecomesUnavailable() {

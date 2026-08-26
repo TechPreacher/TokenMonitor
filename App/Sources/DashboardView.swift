@@ -79,10 +79,10 @@ struct DashboardView: View {
     private var tokensSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             sectionLabel("TOKENS · LOCAL", status: viewModel.state.transcriptsStatus)
-            if let t = viewModel.state.transcripts {
+            if let transcripts = viewModel.state.transcripts {
                 HStack(spacing: 16) {
-                    stat("TODAY", value: t.tokensToday.formatted())
-                    stat("5H WINDOW", value: t.tokensThisSessionWindow.formatted())
+                    stat("TODAY", value: transcripts.tokensToday.formatted())
+                    stat("5H WINDOW", value: transcripts.tokensThisSessionWindow.formatted())
                 }
             } else {
                 unavailableText(viewModel.state.transcriptsStatus)

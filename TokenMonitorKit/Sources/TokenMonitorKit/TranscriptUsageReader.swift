@@ -39,9 +39,9 @@ public struct TranscriptUsageReader: Sendable {
     }
 
     nonisolated(unsafe) private static let timestampFormatter: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
     }()
 
     public func totals(now: Date, calendar: Calendar) throws -> TranscriptTotals {

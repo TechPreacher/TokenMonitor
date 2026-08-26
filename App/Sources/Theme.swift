@@ -60,6 +60,7 @@ struct NeonGauge: View {
 struct ScanlineOverlay: View {
     var body: some View {
         Canvas { context, size in
+            // swiftlint:disable:next identifier_name
             var y: CGFloat = 0
             while y < size.height {
                 context.fill(Path(CGRect(x: 0, y: y, width: size.width, height: 1)),

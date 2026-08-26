@@ -51,23 +51,23 @@ public struct OAuthUsageResponse: Decodable, Sendable {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         let plain = ISO8601DateFormatter()
-        decoder.dateDecodingStrategy = .custom { d in
-            let s = try d.singleValueContainer().decode(String.self)
-            if let date = formatter.date(from: s) ?? plain.date(from: s) { return date }
-            throw DecodingError.dataCorrupted(.init(codingPath: d.codingPath,
-                debugDescription: "Unparseable date: \(s)"))
+        decoder.dateDecodingStrategy = .custom { decoder in
+            let container = try decoder.singleValueContainer().decode(String.self)
+            if let date = formatter.date(from: container) ?? plain.date(from: container) { return date }
+            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath,
+                debugDescription: "Unparseable date: \(container)"))
         }
         return try decoder.decode(OAuthUsageResponse.self, from: data)
     }
 
     public func snapshot(fetchedAt: Date) -> UsageSnapshot {
-        let mapped: [RateLimitInfo] = (limits ?? []).map { l in
+        let mapped: [RateLimitInfo] = (limits ?? []).map { limit in
             RateLimitInfo(
-                kind: RateLimitInfo.Kind(rawValue: l.kind) ?? .other,
-                percent: l.percent,
-                resetsAt: l.resetsAt,
-                scopeLabel: l.scope?.model?.displayName,
-                isActive: l.isActive ?? false)
+                kind: RateLimitInfo.Kind(rawValue: limit.kind) ?? .other,
+                percent: limit.percent,
+                resetsAt: limit.resetsAt,
+                scopeLabel: limit.scope?.model?.displayName,
+                isActive: limit.isActive ?? false)
         }
         return UsageSnapshot(
             sessionPercent: fiveHour.utilization,

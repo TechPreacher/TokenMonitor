@@ -3,6 +3,7 @@ import Foundation
 @testable import TokenMonitorKit
 
 @Suite struct TranscriptUsageReaderTests {
+    // swiftlint:disable:next line_length
     let assistantLine = #"{"type":"assistant","timestamp":"2026-08-26T10:00:00.000Z","message":{"usage":{"input_tokens":10,"output_tokens":20,"cache_creation_input_tokens":5,"cache_read_input_tokens":100}}}"#
 
     @Test func parsesTokensFromAssistantLine() throws {
@@ -27,7 +28,9 @@ import Foundation
 
         // now = 2026-08-26T12:00:00Z. Line1: 10:00 today (in 5h window).
         // Line2: 06:00 today (today, outside 5h window). Line3: yesterday (neither).
+        // swiftlint:disable:next line_length
         let line2 = #"{"type":"assistant","timestamp":"2026-08-26T06:00:00.000Z","message":{"usage":{"input_tokens":1,"output_tokens":1}}}"#
+        // swiftlint:disable:next line_length
         let line3 = #"{"type":"assistant","timestamp":"2026-08-25T10:00:00.000Z","message":{"usage":{"input_tokens":1000,"output_tokens":0}}}"#
         try (assistantLine + "\n" + line2).write(
             to: projA.appendingPathComponent("x.jsonl"), atomically: true, encoding: .utf8)

@@ -11,6 +11,7 @@ struct MockAdminCredentials: CredentialStore {
 
 @Suite(.serialized) struct AdminCostClientTests {
     @Test func sumsAmountsAcrossBuckets() async throws {
+        // swiftlint:disable:next line_length
         let body = #"{"data":[{"starting_at":"2026-08-01T00:00:00Z","ending_at":"2026-08-02T00:00:00Z","results":[{"amount":"123.78912","currency":"USD"},{"amount":"100.0","currency":"USD"}]},{"starting_at":"2026-08-02T00:00:00Z","ending_at":"2026-08-03T00:00:00Z","results":[]}],"has_more":false,"next_page":null}"#
         StubURLProtocol.responses["/v1/organizations/cost_report"] = (200, Data(body.utf8))
         let client = AdminCostClient(credentials: MockAdminCredentials(), session: stubbedSession())

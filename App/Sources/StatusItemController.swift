@@ -52,7 +52,9 @@ final class StatusItemController: NSObject, NSWindowDelegate {
     private func positionUnderStatusItem(_ panel: NSPanel) {
         guard let buttonWindow = statusItem.button?.window else { return }
         let buttonFrame = buttonWindow.frame
+        // swiftlint:disable:next identifier_name
         let x = buttonFrame.midX - panel.frame.width / 2
+        // swiftlint:disable:next identifier_name
         let y = buttonFrame.minY - panel.frame.height - 4
         panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
