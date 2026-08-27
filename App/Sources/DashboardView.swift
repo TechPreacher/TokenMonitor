@@ -13,13 +13,14 @@ struct DashboardView: View {
                 header
                 subscriptionSection
                 tokensSection
+                sessionsSection
                 costSection
-                Spacer(minLength: 0)
             }
             .padding(16)
             ScanlineOverlay()
         }
-        .frame(width: 320, height: 420)
+        .frame(width: 320)
+        .fixedSize(horizontal: false, vertical: true)
         .background(Theme.background.opacity(0.92))
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 14))
@@ -88,6 +89,23 @@ struct DashboardView: View {
                 unavailableText(viewModel.state.transcriptsStatus)
             }
         }
+    }
+
+    /// Live Claude Code sessions with context fill; section disappears when none.
+    @ViewBuilder private var sessionsSection: some View {
+        if !viewModel.state.activeSessions.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                sectionLabel("SESSIONS · CONTEXT", status: viewModel.state.transcriptsStatus)
+                ForEach(viewModel.state.activeSessions) { session in
+                    NeonGauge(title: session.label, percent: session.percent,
+                              subtitle: "\(compact(session.contextTokens)) / \(compact(session.windowTokens)) tokens")
+                }
+            }
+        }
+    }
+
+    private func compact(_ tokens: Int) -> String {
+        tokens.formatted(.number.notation(.compactName).precision(.fractionLength(0...1)))
     }
 
     private var costSection: some View {

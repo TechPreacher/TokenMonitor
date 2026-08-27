@@ -12,6 +12,7 @@ final class DashboardViewModel {
     private let usageProvider: any UsageProviding
     private let costProvider: any CostProviding
     private let transcriptReader: TranscriptUsageReader?
+    private let sessionsReader: ActiveSessionsReader?
     private let networkPolicy = RefreshPolicy(baseInterval: 60)
     private let localPolicy = RefreshPolicy(baseInterval: 30, maxInterval: 120)
     private var networkFailures = 0
@@ -20,10 +21,12 @@ final class DashboardViewModel {
 
     init(usageProvider: any UsageProviding,
          costProvider: any CostProviding,
-         transcriptReader: TranscriptUsageReader?) {
+         transcriptReader: TranscriptUsageReader?,
+         sessionsReader: ActiveSessionsReader? = nil) {
         self.usageProvider = usageProvider
         self.costProvider = costProvider
         self.transcriptReader = transcriptReader
+        self.sessionsReader = sessionsReader
     }
 
     static func live() -> DashboardViewModel {
@@ -33,7 +36,8 @@ final class DashboardViewModel {
         return DashboardViewModel(
             usageProvider: ClaudeOAuthClient(credentials: store),
             costProvider: AdminCostClient(credentials: store),
-            transcriptReader: TranscriptUsageReader(rootDirectory: root))
+            transcriptReader: TranscriptUsageReader(rootDirectory: root),
+            sessionsReader: ActiveSessionsReader(rootDirectory: root))
     }
 
     func refreshNetworkSources() async {
@@ -51,16 +55,22 @@ final class DashboardViewModel {
     }
 
     func refreshLocalSources() async {
-        guard let transcriptReader else { return }
-        let result: Result<TranscriptTotals, Error>
-        do {
-            result = .success(try transcriptReader.totals(now: Date(), calendar: .current))
-            localFailures = 0
-        } catch {
-            result = .failure(error)
-            localFailures += 1
+        let now = Date()
+        var totals: Result<TranscriptTotals, Error>?
+        if let transcriptReader {
+            do {
+                totals = .success(try transcriptReader.totals(now: now, calendar: .current))
+                localFailures = 0
+            } catch {
+                totals = .failure(error)
+                localFailures += 1
+            }
         }
-        state = UsageAggregator.merge(previous: state, usage: nil, transcripts: result, cost: nil)
+        let sessions: Result<[ActiveSession], Error>? = sessionsReader.map { reader in
+            Result { try reader.sessions(now: now) }
+        }
+        state = UsageAggregator.merge(previous: state, usage: nil, transcripts: totals,
+                                      cost: nil, sessions: sessions)
     }
 
     func startPolling() {

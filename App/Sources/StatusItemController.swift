@@ -81,6 +81,7 @@ final class StatusItemController: NSObject, NSWindowDelegate {
 
     private func positionUnderStatusItem(_ panel: NSPanel) {
         guard let buttonWindow = statusItem.button?.window else { return }
+        panel.layoutIfNeeded()   // content-driven height must be final before anchoring
         let buttonFrame = buttonWindow.frame
         // swiftlint:disable:next identifier_name
         let x = buttonFrame.midX - panel.frame.width / 2

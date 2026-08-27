@@ -64,6 +64,30 @@ public struct TranscriptTotals: Sendable, Equatable {
     }
 }
 
+/// One live Claude Code session and how full its context window is.
+public struct ActiveSession: Sendable, Equatable, Identifiable {
+    public let sessionId: String
+    /// Project name shown in the UI (cwd basename, fallback transcript folder name).
+    public let label: String
+    public let contextTokens: Int
+    public let windowTokens: Int
+    /// 0...100
+    public let percent: Double
+    public let lastActivity: Date
+
+    public var id: String { sessionId }
+
+    public init(sessionId: String, label: String, contextTokens: Int,
+                windowTokens: Int, percent: Double, lastActivity: Date) {
+        self.sessionId = sessionId
+        self.label = label
+        self.contextTokens = contextTokens
+        self.windowTokens = windowTokens
+        self.percent = percent
+        self.lastActivity = lastActivity
+    }
+}
+
 /// API spend from the Admin cost report.
 public struct CostSnapshot: Sendable, Equatable {
     public let monthToDateUSD: Double
@@ -95,16 +119,20 @@ public struct DashboardState: Sendable, Equatable {
     public var transcriptsStatus: SourceStatus
     public var cost: CostSnapshot?
     public var costStatus: SourceStatus
+    /// Claude Code sessions with recent transcript activity; empty when none or unreadable.
+    public var activeSessions: [ActiveSession]
 
     public init(usage: UsageSnapshot?, usageStatus: SourceStatus,
                 transcripts: TranscriptTotals?, transcriptsStatus: SourceStatus,
-                cost: CostSnapshot?, costStatus: SourceStatus) {
+                cost: CostSnapshot?, costStatus: SourceStatus,
+                activeSessions: [ActiveSession] = []) {
         self.usage = usage
         self.usageStatus = usageStatus
         self.transcripts = transcripts
         self.transcriptsStatus = transcriptsStatus
         self.cost = cost
         self.costStatus = costStatus
+        self.activeSessions = activeSessions
     }
 
     public static let empty = DashboardState(
