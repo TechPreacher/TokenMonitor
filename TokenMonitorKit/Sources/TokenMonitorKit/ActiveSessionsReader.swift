@@ -57,18 +57,26 @@ public struct ActiveSessionsReader: Sendable {
                            entrypoint: parsed.entrypoint)
     }
 
-    /// Windows per docs (2026-08): 1M for the Claude 5 family and Opus/Sonnet 4.6+,
-    /// 200k for Haiku and pre-4.6 models; "[1m]" beta suffix always means 1M.
-    static func contextWindow(forModel model: String?) -> Int {
+    /// Live Models API catalog wins (exact id, then alias/dated-id prefix match);
+    /// static fallback per docs (2026-08): 1M for the Claude 5 family and
+    /// Opus/Sonnet 4.6+, 200k for Haiku and pre-4.6 models; "[1m]" beta suffix
+    /// always means 1M.
+    static func contextWindow(forModel model: String?, catalog: [String: Int] = [:]) -> Int {
         guard let model else { return 200_000 }
+        if let window = catalog[model] { return window }
         if model.contains("[1m]") { return 1_000_000 }
+        // Alias vs dated id: match in either direction, longest key wins.
+        let prefixed = catalog.keys
+            .filter { $0.hasPrefix(model) || model.hasPrefix($0) }
+            .max(by: { $0.count < $1.count })
+        if let prefixed, let window = catalog[prefixed] { return window }
         let millionTokenMarkers = ["fable", "mythos", "opus-5", "sonnet-5",
                                    "opus-4-6", "opus-4-7", "opus-4-8", "sonnet-4-6"]
         if millionTokenMarkers.contains(where: model.contains) { return 1_000_000 }
         return 200_000
     }
 
-    public func sessions(now: Date) throws -> [ActiveSession] {
+    public func sessions(now: Date, catalog: [String: Int] = [:]) throws -> [ActiveSession] {
         let fm = FileManager.default
         guard let enumerator = fm.enumerator(
             at: rootDirectory,
@@ -84,7 +92,7 @@ public struct ActiveSessionsReader: Sendable {
             // Agent SDK sessions (claude-mem and other background helpers) share
             // the project's cwd and would show up as confusing duplicate rows.
             if info.entrypoint?.hasPrefix("sdk") == true { continue }
-            let window = Self.contextWindow(forModel: info.model)
+            let window = Self.contextWindow(forModel: info.model, catalog: catalog)
             let label = info.cwd.map { ($0 as NSString).lastPathComponent }
                 ?? url.deletingLastPathComponent().lastPathComponent
             let percent = min(100, Double(info.contextTokens) / Double(window) * 100)

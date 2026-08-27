@@ -71,6 +71,36 @@ import Foundation
         #expect(ActiveSessionsReader.contextWindow(forModel: nil) == 200_000)
     }
 
+    @Test func catalogOverridesStaticWindowMapping() {
+        let catalog = ["claude-fable-5": 2_000_000, "claude-opus-4-5-20251101": 1_000_000]
+        // Exact catalog match beats the static table.
+        #expect(ActiveSessionsReader.contextWindow(forModel: "claude-fable-5",
+                                                   catalog: catalog) == 2_000_000)
+        // Prefix match: transcript uses the alias, catalog has the dated id.
+        #expect(ActiveSessionsReader.contextWindow(forModel: "claude-opus-4-5",
+                                                   catalog: catalog) == 1_000_000)
+        // Unknown model falls through to static mapping.
+        #expect(ActiveSessionsReader.contextWindow(forModel: "claude-haiku-4-5-20251001",
+                                                   catalog: catalog) == 200_000)
+        // "[1m]" suffix still wins for models absent from the catalog.
+        #expect(ActiveSessionsReader.contextWindow(forModel: "claude-sonnet-4-5[1m]",
+                                                   catalog: catalog) == 1_000_000)
+    }
+
+    @Test func sessionsUseCatalogWindows() throws {
+        let root = try makeTempRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let now = Date()
+        try writeSession(root: root, project: "-Users-me-Code-ProjectX", file: "abc.jsonl",
+                         lines: [Self.usageLine], mtime: now)
+
+        let sessions = try ActiveSessionsReader(rootDirectory: root)
+            .sessions(now: now, catalog: ["claude-fable-5": 500_000])
+        let session = try #require(sessions.first)
+        #expect(session.windowTokens == 500_000)
+        #expect(abs(session.percent - 10.0004) < 0.01)
+    }
+
     @Test func listsActiveSessionsWithPercentAndLabel() throws {
         let root = try makeTempRoot()
         defer { try? FileManager.default.removeItem(at: root) }

@@ -13,8 +13,35 @@ struct StubCost: CostProviding {
     func fetchMonthToDateCost(now: Date) async throws -> CostSnapshot { try result.get() }
 }
 
+struct StubCatalog: ModelCatalogProviding {
+    var windows: [String: Int]
+    func fetchContextWindows() async throws -> [String: Int] { windows }
+}
+
 @MainActor
 @Suite struct DashboardViewModelTests {
+    @Test func fetchedCatalogDrivesSessionWindows() async throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        let dir = root.appendingPathComponent("-Users-me-Code-ProjectX")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        // swiftlint:disable:next line_length
+        let line = #"{"type":"assistant","timestamp":"2026-08-27T07:00:00.000Z","cwd":"/Users/me/Code/ProjectX","sessionId":"abc","message":{"model":"claude-fable-5","usage":{"input_tokens":2,"output_tokens":700,"cache_creation_input_tokens":5000,"cache_read_input_tokens":45000}}}"#
+        try line.write(to: dir.appendingPathComponent("abc.jsonl"),
+                       atomically: true, encoding: .utf8)
+
+        let vm = DashboardViewModel(
+            usageProvider: StubUsage(result: .failure(FetchError.httpStatus(500))),
+            costProvider: StubCost(result: .failure(FetchError.httpStatus(500))),
+            transcriptReader: nil,
+            sessionsReader: ActiveSessionsReader(rootDirectory: root),
+            modelCatalog: StubCatalog(windows: ["claude-fable-5": 500_000]))
+        await vm.refreshNetworkSources()   // fetches the catalog
+        await vm.refreshLocalSources()
+        #expect(vm.state.activeSessions.first?.windowTokens == 500_000)
+    }
+
     @Test func refreshMergesSuccessesIntoState() async {
         let usage = UsageSnapshot(sessionPercent: 55, sessionResetsAt: nil, weeklyPercent: 5,
                                   weeklyResetsAt: nil, limits: [], extraUsageSpentUSD: nil,

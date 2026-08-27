@@ -13,6 +13,9 @@ final class DashboardViewModel {
     private let costProvider: any CostProviding
     private let transcriptReader: TranscriptUsageReader?
     private let sessionsReader: ActiveSessionsReader?
+    private let modelCatalog: (any ModelCatalogProviding)?
+    /// Context windows fetched from the Models API; empty until first success.
+    private var modelWindows: [String: Int] = [:]
     private let networkPolicy = RefreshPolicy(baseInterval: 60)
     private let localPolicy = RefreshPolicy(baseInterval: 30, maxInterval: 120)
     private var networkFailures = 0
@@ -22,11 +25,13 @@ final class DashboardViewModel {
     init(usageProvider: any UsageProviding,
          costProvider: any CostProviding,
          transcriptReader: TranscriptUsageReader?,
-         sessionsReader: ActiveSessionsReader? = nil) {
+         sessionsReader: ActiveSessionsReader? = nil,
+         modelCatalog: (any ModelCatalogProviding)? = nil) {
         self.usageProvider = usageProvider
         self.costProvider = costProvider
         self.transcriptReader = transcriptReader
         self.sessionsReader = sessionsReader
+        self.modelCatalog = modelCatalog
     }
 
     static func live() -> DashboardViewModel {
@@ -37,10 +42,16 @@ final class DashboardViewModel {
             usageProvider: ClaudeOAuthClient(credentials: store),
             costProvider: AdminCostClient(credentials: store),
             transcriptReader: TranscriptUsageReader(rootDirectory: root),
-            sessionsReader: ActiveSessionsReader(rootDirectory: root))
+            sessionsReader: ActiveSessionsReader(rootDirectory: root),
+            modelCatalog: ModelCatalogClient(credentials: store))
     }
 
     func refreshNetworkSources() async {
+        // Model windows change only at model launches: fetch once, retry each
+        // tick until it succeeds, static mapping covers the meantime.
+        if modelWindows.isEmpty, let modelCatalog {
+            modelWindows = (try? await modelCatalog.fetchContextWindows()) ?? [:]
+        }
         async let usageResult: Result<UsageSnapshot, Error> = {
             do { return .success(try await usageProvider.fetchUsage()) }
             catch { return .failure(error) }
@@ -66,8 +77,8 @@ final class DashboardViewModel {
                 localFailures += 1
             }
         }
-        let sessions: Result<[ActiveSession], Error>? = sessionsReader.map { reader in
-            Result { try reader.sessions(now: now) }
+        let sessions: Result<[ActiveSession], Error>? = sessionsReader.map { [modelWindows] reader in
+            Result { try reader.sessions(now: now, catalog: modelWindows) }
         }
         state = UsageAggregator.merge(previous: state, usage: nil, transcripts: totals,
                                       cost: nil, sessions: sessions)
