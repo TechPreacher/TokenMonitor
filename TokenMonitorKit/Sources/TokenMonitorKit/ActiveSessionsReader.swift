@@ -10,6 +10,7 @@ public struct ActiveSessionsReader: Sendable {
         let model: String?
         let cwd: String?
         let sessionId: String?
+        let entrypoint: String?
     }
 
     private let rootDirectory: URL
@@ -43,6 +44,7 @@ public struct ActiveSessionsReader: Sendable {
             let cwd: String?
             let sessionId: String?
             let isSidechain: Bool?
+            let entrypoint: String?
         }
         guard let parsed = try? JSONDecoder().decode(Line.self, from: Data(line.utf8)),
               parsed.isSidechain != true,
@@ -51,7 +53,8 @@ public struct ActiveSessionsReader: Sendable {
         let context = (usage.inputTokens ?? 0) + (usage.cacheCreationInputTokens ?? 0)
             + (usage.cacheReadInputTokens ?? 0)
         return ContextInfo(contextTokens: context, model: parsed.message?.model,
-                           cwd: parsed.cwd, sessionId: parsed.sessionId)
+                           cwd: parsed.cwd, sessionId: parsed.sessionId,
+                           entrypoint: parsed.entrypoint)
     }
 
     static func contextWindow(forModel model: String?) -> Int {
@@ -72,6 +75,9 @@ public struct ActiveSessionsReader: Sendable {
                 .contentModificationDate,
                   now.timeIntervalSince(mtime) <= activityWindow,
                   let info = Self.newestContextInfo(inFileAt: url) else { continue }
+            // Agent SDK sessions (claude-mem and other background helpers) share
+            // the project's cwd and would show up as confusing duplicate rows.
+            if info.entrypoint?.hasPrefix("sdk") == true { continue }
             let window = Self.contextWindow(forModel: info.model)
             let label = info.cwd.map { ($0 as NSString).lastPathComponent }
                 ?? url.deletingLastPathComponent().lastPathComponent
@@ -81,7 +87,22 @@ public struct ActiveSessionsReader: Sendable {
                 label: label, contextTokens: info.contextTokens,
                 windowTokens: window, percent: percent, lastActivity: mtime))
         }
-        return sessions.sorted { $0.lastActivity > $1.lastActivity }
+        return Self.disambiguated(sessions.sorted { $0.lastActivity > $1.lastActivity })
+    }
+
+    /// Two live sessions in the same project share a label; suffix a short
+    /// session-id so the rows stay tellable apart.
+    private static func disambiguated(_ sessions: [ActiveSession]) -> [ActiveSession] {
+        let labelCounts = Dictionary(grouping: sessions, by: \.label).mapValues(\.count)
+        return sessions.map { session in
+            guard labelCounts[session.label, default: 0] > 1 else { return session }
+            return ActiveSession(sessionId: session.sessionId,
+                                 label: "\(session.label) · \(session.sessionId.prefix(4))",
+                                 contextTokens: session.contextTokens,
+                                 windowTokens: session.windowTokens,
+                                 percent: session.percent,
+                                 lastActivity: session.lastActivity)
+        }
     }
 
     private static func newestContextInfo(inFileAt url: URL) -> ContextInfo? {

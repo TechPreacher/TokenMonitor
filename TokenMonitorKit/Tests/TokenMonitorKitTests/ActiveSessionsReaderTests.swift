@@ -8,7 +8,38 @@ import Foundation
     static let laterUsageLine = #"{"type":"assistant","timestamp":"2026-08-27T07:05:00.000Z","cwd":"/Users/me/Code/ProjectX","sessionId":"abc","message":{"model":"claude-fable-5","usage":{"input_tokens":10,"output_tokens":100,"cache_creation_input_tokens":1000,"cache_read_input_tokens":99000}}}"#
     static let sidechainLine = #"{"type":"assistant","isSidechain":true,"timestamp":"2026-08-27T07:06:00.000Z","cwd":"/Users/me/Code/ProjectX","sessionId":"abc","message":{"model":"claude-fable-5","usage":{"input_tokens":1,"output_tokens":1,"cache_creation_input_tokens":1,"cache_read_input_tokens":1}}}"#
     static let millionModelLine = #"{"type":"assistant","timestamp":"2026-08-27T07:00:00.000Z","cwd":"/Users/me/Code/Big","sessionId":"def","message":{"model":"claude-sonnet-4-5[1m]","usage":{"input_tokens":0,"output_tokens":10,"cache_creation_input_tokens":0,"cache_read_input_tokens":500000}}}"#
+    static let sdkLine = #"{"type":"assistant","entrypoint":"sdk-py","timestamp":"2026-08-27T07:00:00.000Z","cwd":"/Users/me/Code/ProjectX","sessionId":"sdk1","message":{"model":"claude-fable-5","usage":{"input_tokens":5,"output_tokens":5,"cache_creation_input_tokens":5,"cache_read_input_tokens":5}}}"#
+    static let cliLine = #"{"type":"assistant","entrypoint":"cli","timestamp":"2026-08-27T07:00:00.000Z","cwd":"/Users/me/Code/ProjectX","sessionId":"cli2","message":{"model":"claude-fable-5","usage":{"input_tokens":2,"output_tokens":1,"cache_creation_input_tokens":0,"cache_read_input_tokens":20000}}}"#
     // swiftlint:enable line_length
+
+    @Test func excludesSDKBackgroundSessions() throws {
+        let root = try makeTempRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let now = Date()
+        // Same project dir: one interactive CLI session, one SDK helper session
+        // (claude-mem etc.) — only the CLI session should be listed.
+        try writeSession(root: root, project: "-Users-me-Code-ProjectX", file: "abc.jsonl",
+                         lines: [Self.usageLine], mtime: now)
+        try writeSession(root: root, project: "-Users-me-Code-ProjectX", file: "sdk1.jsonl",
+                         lines: [Self.sdkLine], mtime: now)
+
+        let sessions = try ActiveSessionsReader(rootDirectory: root).sessions(now: now)
+        #expect(sessions.map(\.sessionId) == ["abc"])
+    }
+
+    @Test func duplicateLabelsGetShortIdSuffix() throws {
+        let root = try makeTempRoot()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let now = Date()
+        // Two genuine CLI sessions in the same project must stay distinguishable.
+        try writeSession(root: root, project: "-Users-me-Code-ProjectX", file: "abc.jsonl",
+                         lines: [Self.usageLine], mtime: now)
+        try writeSession(root: root, project: "-Users-me-Code-ProjectX", file: "cli2.jsonl",
+                         lines: [Self.cliLine], mtime: now.addingTimeInterval(-30))
+
+        let sessions = try ActiveSessionsReader(rootDirectory: root).sessions(now: now)
+        #expect(sessions.map(\.label) == ["ProjectX · abc", "ProjectX · cli2"])
+    }
 
     @Test func parsesContextInfoFromUsageLine() throws {
         let info = try #require(ActiveSessionsReader.contextInfo(inLine: Self.usageLine))
