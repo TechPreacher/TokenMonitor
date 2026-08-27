@@ -77,6 +77,7 @@ xcrun stapler staple <built .app>
 
 - Menu-bar only (`LSUIElement`): `NSStatusItem` + custom non-activating `NSPanel` hosting SwiftUI (NOT `MenuBarExtra` — can't float/pin reliably). Pin = `panel.level = .floating`.
 - Data providers behind protocols (`UsageProviding`, `CostProviding`, `CredentialStore`), merged by `UsageAggregator`; sources fail independently and degrade to stale/unavailable badges, never crash.
+- Active sessions: `ActiveSessionsReader` lists sessions whose transcript was written in the last 5 min with context-window fill % (tail-parses the newest usage entry per `.jsonl`; window 200k default, 1M for `[1m]` models). Panel height auto-fits the list; `FloatingPanel.setFrame` keeps the top edge anchored so it grows downward.
 - Subscription usage: OAuth usage endpoint (undocumented — verified by spike; provider returns `.unavailable` if it breaks) + local `~/.claude/projects/**/*.jsonl` parsing (ccusage-style) as fallback/detail.
 - API spend: Anthropic Admin API cost report (pagination hard-capped at 12 pages); admin key lives in Keychain under service `com.corti.TokenMonitor`, entered via Settings, which validates it live against the API before persisting. Do not invent Anthropic endpoints; verify against current docs.
 - ViewModels (`@Observable`) own polling (`RefreshPolicy`: 30s local, 60s network, exponential backoff); views stay dumb. Theme tokens centralized in one `Theme` type.

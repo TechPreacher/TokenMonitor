@@ -42,3 +42,32 @@ import Foundation
         }
     }
 }
+
+@Suite struct ActiveSessionsMergeTests {
+    func session(_ id: String) -> ActiveSession {
+        ActiveSession(sessionId: id, label: "Proj", contextTokens: 100_000,
+                      windowTokens: 200_000, percent: 50, lastActivity: Date())
+    }
+
+    @Test func successReplacesSessions() {
+        let state = UsageAggregator.merge(previous: .empty, usage: nil, transcripts: nil,
+                                          cost: nil, sessions: .success([session("a")]))
+        #expect(state.activeSessions.map(\.sessionId) == ["a"])
+    }
+
+    @Test func failureKeepsPreviousSessions() {
+        var previous = DashboardState.empty
+        previous.activeSessions = [session("a")]
+        let state = UsageAggregator.merge(previous: previous, usage: nil, transcripts: nil,
+                                          cost: nil, sessions: .failure(FetchError.httpStatus(500)))
+        #expect(state.activeSessions.map(\.sessionId) == ["a"])
+    }
+
+    @Test func nilLeavesSessionsUntouched() {
+        var previous = DashboardState.empty
+        previous.activeSessions = [session("a")]
+        let state = UsageAggregator.merge(previous: previous, usage: nil,
+                                          transcripts: nil, cost: nil)
+        #expect(state.activeSessions.map(\.sessionId) == ["a"])
+    }
+}

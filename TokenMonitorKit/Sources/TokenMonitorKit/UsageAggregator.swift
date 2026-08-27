@@ -5,8 +5,12 @@ public enum UsageAggregator {
     public static func merge(previous: DashboardState,
                              usage: Result<UsageSnapshot, Error>?,
                              transcripts: Result<TranscriptTotals, Error>?,
-                             cost: Result<CostSnapshot, Error>?) -> DashboardState {
+                             cost: Result<CostSnapshot, Error>?,
+                             sessions: Result<[ActiveSession], Error>? = nil) -> DashboardState {
         var next = previous
+
+        // Sessions degrade silently: failures keep the previous list, no badge.
+        if case .success(let list) = sessions { next.activeSessions = list }
 
         switch usage {
         case .success(let snap):

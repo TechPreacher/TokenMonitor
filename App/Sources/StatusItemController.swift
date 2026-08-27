@@ -81,11 +81,21 @@ final class StatusItemController: NSObject, NSWindowDelegate {
 
     private func positionUnderStatusItem(_ panel: NSPanel) {
         guard let buttonWindow = statusItem.button?.window else { return }
+        panel.layoutIfNeeded()   // content-driven height must be final before anchoring
         let buttonFrame = buttonWindow.frame
         // swiftlint:disable:next identifier_name
-        let x = buttonFrame.midX - panel.frame.width / 2
+        var x = buttonFrame.midX - panel.frame.width / 2
         // swiftlint:disable:next identifier_name
-        let y = buttonFrame.minY - panel.frame.height - 4
+        var y = buttonFrame.minY - panel.frame.height - 4
+        // Menu-bar managers (Ice/Bartender) park hidden status items offscreen;
+        // clamp so the panel always lands on the visible screen.
+        // Offscreen-parked windows report screen == nil, and NSScreen.main is
+        // also nil while this non-activating app has no key window.
+        let screen = buttonWindow.screen ?? NSScreen.main ?? NSScreen.screens.first
+        if let visible = screen?.visibleFrame {
+            x = min(max(x, visible.minX + 8), visible.maxX - panel.frame.width - 8)
+            y = min(max(y, visible.minY + 8), visible.maxY - panel.frame.height - 8)
+        }
         panel.setFrameOrigin(NSPoint(x: x, y: y))
     }
 

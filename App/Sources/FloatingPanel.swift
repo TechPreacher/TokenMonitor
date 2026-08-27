@@ -23,9 +23,21 @@ final class FloatingPanel: NSPanel {
         becomesKeyOnlyIfNeeded = true
         backgroundColor = .clear
         isOpaque = false
-        contentView = NSHostingView(rootView: content)
+        let hosting = NSHostingView(rootView: content)
+        hosting.sizingOptions = [.preferredContentSize]
+        contentView = hosting
         isPinned = false
     }
 
     override var canBecomeKey: Bool { true }
+
+    /// Content-driven height changes keep the top edge anchored under the
+    /// status item, so the panel grows/shrinks downward.
+    override func setFrame(_ frameRect: NSRect, display flag: Bool) {
+        var rect = frameRect
+        if isVisible && abs(frameRect.height - frame.height) > 0.5 {
+            rect.origin.y = frame.maxY - frameRect.height
+        }
+        super.setFrame(rect, display: flag)
+    }
 }
