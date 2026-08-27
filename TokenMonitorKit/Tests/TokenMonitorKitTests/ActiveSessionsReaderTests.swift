@@ -57,8 +57,17 @@ import Foundation
     }
 
     @Test func contextWindowMapping() {
-        #expect(ActiveSessionsReader.contextWindow(forModel: "claude-fable-5") == 200_000)
+        // 1M-context models (Claude 5 family, Opus/Sonnet 4.6+)
+        #expect(ActiveSessionsReader.contextWindow(forModel: "claude-fable-5") == 1_000_000)
+        #expect(ActiveSessionsReader.contextWindow(forModel: "claude-opus-5") == 1_000_000)
+        #expect(ActiveSessionsReader.contextWindow(forModel: "claude-sonnet-5") == 1_000_000)
+        #expect(ActiveSessionsReader.contextWindow(forModel: "claude-opus-4-8") == 1_000_000)
+        #expect(ActiveSessionsReader.contextWindow(forModel: "claude-sonnet-4-6") == 1_000_000)
         #expect(ActiveSessionsReader.contextWindow(forModel: "claude-sonnet-4-5[1m]") == 1_000_000)
+        // 200k models
+        #expect(ActiveSessionsReader.contextWindow(forModel: "claude-haiku-4-5-20251001") == 200_000)
+        #expect(ActiveSessionsReader.contextWindow(forModel: "claude-sonnet-4-5") == 200_000)
+        #expect(ActiveSessionsReader.contextWindow(forModel: "claude-opus-4-5-20251101") == 200_000)
         #expect(ActiveSessionsReader.contextWindow(forModel: nil) == 200_000)
     }
 
@@ -83,8 +92,8 @@ import Foundation
         #expect(session.sessionId == "abc")
         #expect(session.label == "ProjectX")
         #expect(session.contextTokens == 100_010)
-        #expect(session.windowTokens == 200_000)
-        #expect(abs(session.percent - 50.005) < 0.01)
+        #expect(session.windowTokens == 1_000_000)
+        #expect(abs(session.percent - 10.001) < 0.01)
     }
 
     @Test func millionTokenWindowPercent() throws {

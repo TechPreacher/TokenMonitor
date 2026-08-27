@@ -57,8 +57,14 @@ public struct ActiveSessionsReader: Sendable {
                            entrypoint: parsed.entrypoint)
     }
 
+    /// Windows per docs (2026-08): 1M for the Claude 5 family and Opus/Sonnet 4.6+,
+    /// 200k for Haiku and pre-4.6 models; "[1m]" beta suffix always means 1M.
     static func contextWindow(forModel model: String?) -> Int {
-        if let model, model.contains("[1m]") { return 1_000_000 }
+        guard let model else { return 200_000 }
+        if model.contains("[1m]") { return 1_000_000 }
+        let millionTokenMarkers = ["fable", "mythos", "opus-5", "sonnet-5",
+                                   "opus-4-6", "opus-4-7", "opus-4-8", "sonnet-4-6"]
+        if millionTokenMarkers.contains(where: model.contains) { return 1_000_000 }
         return 200_000
     }
 
