@@ -8,9 +8,10 @@ TokenMonitor tracks:
 
 - **Claude Code subscription usage**: 5-hour session percentage, weekly percentage, and per-model weekly limits (from the OAuth usage endpoint)
 - **Local token counts**: Parsed from Claude Code transcript JSONL files (`~/.claude/projects`)
+- **Active Claude Code sessions**: One gauge per session with recent transcript activity (last 5 minutes), showing how full its context window is (e.g. `533.9K / 1M tokens`). Background Agent SDK sessions are filtered out; per-model context windows come live from the Anthropic Models API, with a built-in fallback table for offline use.
 - **Anthropic API spend**: Month-to-date costs via the Anthropic Admin API
 
-The panel floats above all windows and can be pinned to stay visible. Data auto-refreshes (local scan every 30 s, network every 60 s, exponential backoff on failures). Right-click the menu-bar icon for About / Quit.
+The panel floats above all windows, can be pinned to stay visible, and automatically resizes to fit the session list. Data auto-refreshes (local scan every 30 s, network every 60 s, exponential backoff on failures). Right-click the menu-bar icon for About / Quit.
 
 ![TokenMonitor panel](Design/Screenshots/token%20monitor%20screenshot.png)
 
@@ -90,7 +91,7 @@ The stapled app and distribution zip land in `dist/` (gitignored). Debug builds 
 - **App/** — Thin SwiftUI/AppKit shell (menu-bar status item, floating `NSPanel`, view models, theme).
 - **project.yml** — XcodeGen project definition; `.xcodeproj` is generated and gitignored.
 
-Data sources (`UsageProviding`, `CostProviding`) fail independently; the aggregator merges results, degrading gracefully if any provider is unavailable or returns stale data.
+Data sources (`UsageProviding`, `CostProviding`, `ModelCatalogProviding`, transcript/session readers) fail independently; the aggregator merges results, degrading gracefully if any provider is unavailable or returns stale data.
 
 ## Development
 
