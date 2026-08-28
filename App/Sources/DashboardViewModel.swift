@@ -67,18 +67,22 @@ final class DashboardViewModel {
 
     func refreshLocalSources() async {
         let now = Date()
-        var totals: Result<TranscriptTotals, Error>?
-        if let transcriptReader {
-            do {
-                totals = .success(try transcriptReader.totals(now: now, calendar: .current))
-                localFailures = 0
-            } catch {
-                totals = .failure(error)
-                localFailures += 1
-            }
-        }
-        let sessions: Result<[ActiveSession], Error>? = sessionsReader.map { [modelWindows] reader in
-            Result { try reader.sessions(now: now, catalog: modelWindows) }
+        // Transcript parsing chews through hundreds of MB of JSONL — run it
+        // off the main actor so the UI never stalls on a polling tick.
+        let (totals, sessions) = await Task
+            .detached(priority: .utility) { [transcriptReader, sessionsReader, modelWindows] in
+                let totals: Result<TranscriptTotals, Error>? = transcriptReader.map { reader in
+                    Result { try reader.totals(now: now, calendar: .current) }
+                }
+                let sessions: Result<[ActiveSession], Error>? = sessionsReader.map { reader in
+                    Result { try reader.sessions(now: now, catalog: modelWindows) }
+                }
+                return (totals, sessions)
+            }.value
+        switch totals {
+        case .success: localFailures = 0
+        case .failure: localFailures += 1
+        case nil: break
         }
         state = UsageAggregator.merge(previous: state, usage: nil, transcripts: totals,
                                       cost: nil, sessions: sessions)

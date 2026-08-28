@@ -64,6 +64,9 @@ final class StatusItemController: NSObject, NSWindowDelegate {
         positionUnderStatusItem(panel)
         panel.orderFrontRegardless()
         installOutsideClickMonitor()
+        // Opening the panel is the user's "check now" gesture — don't make
+        // them wait for the next polling tick to see fresh session data.
+        Task { [viewModel] in await viewModel.refreshLocalSources() }
     }
 
     private func closePanel() {
