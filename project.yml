@@ -21,8 +21,8 @@ targets:
         INFOPLIST_KEY_LSUIElement: true            # menu-bar only, no Dock icon
         INFOPLIST_KEY_NSHumanReadableCopyright: ""
         PRODUCT_BUNDLE_IDENTIFIER: com.corti.TokenMonitor
-        MARKETING_VERSION: "1.1.0"
-        CURRENT_PROJECT_VERSION: "2"
+        MARKETING_VERSION: "1.1.1"
+        CURRENT_PROJECT_VERSION: "3"
         SWIFT_VERSION: "6.0"
         ENABLE_APP_SANDBOX: false                  # needs ~/.claude + other app's keychain item
         DEVELOPMENT_TEAM: M9Y77E7ZX5
