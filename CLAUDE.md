@@ -89,6 +89,11 @@ xcrun stapler staple <built .app>
 - Test target must carry the same `DEVELOPMENT_TEAM` as the app or `xcodebuild test` fails at dlopen with a Team-ID mismatch.
 - `dist/` holds stapled release artifacts and is gitignored.
 
+## Version control
+
+- Use GitButler (`but`) instead of `git` for all version-control operations in this repo (status, diff, branch, commit, push, history edits). See the installed GitButler skill for command syntax.
+- Read-only `git` commands are acceptable only when `but` has no equivalent.
+
 ## Conventions
 
 - Swift 6 strict concurrency; keep data-layer types `Sendable`
